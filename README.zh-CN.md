@@ -92,20 +92,23 @@ ln -s /home/yubs/cloudcli-plugin-agy ~/.claude-code-ui/plugins/cloudcli-plugin-a
 
 ---
 
-## 📡 外部客户端直连方式
+## 💡 配合 Cloud-Agent 统一网关在外部客户端中使用
 
-得益于**零外部端口架构**，你无需为插件单独配置端口，直接复用 Cloud-Agent 的主端口 `3001`：
+> [!NOTE]
+> **架构边界明确澄清：**  
+> 本插件是**纯粹的本地执行驱动（Backend Driver）**，**自身不包含、也不对外暴露 API 网关服务**。所有外部接口（如 `/v1/chat/completions`、`/v1/messages`、Token 鉴权等）均由 **Cloud-Agent 宿主系统（默认 3001 端口）** 统一提供。宿主网关在接收到模型前缀为 `agy/*` 的请求时，会在内部将执行任务委派给本插件驱动处理。
 
-### 1. Claude Code CLI 直连
+### 1. Claude Code CLI（通过 Cloud-Agent 宿主网关中转）
+在终端中将环境变量配置为 Cloud-Agent 宿主网关地址：
 ```bash
 export ANTHROPIC_BASE_URL="http://127.0.0.1:3001"
 export ANTHROPIC_API_KEY="sk-any-token"
 
-# 直接启动 Claude Code，全自动走 agy 引擎
+# 启动 Claude Code，宿主网关将自动把流量委派给本地 agy 驱动
 claude
 ```
 
-### 2. cURL / OpenAI 协议调用
+### 2. cURL / OpenAI 协议调用（通过 Cloud-Agent 宿主网关）
 ```bash
 curl -N http://127.0.0.1:3001/v1/chat/completions \
   -H "Content-Type: application/json" \

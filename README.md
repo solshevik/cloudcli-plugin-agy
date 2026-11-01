@@ -92,20 +92,23 @@ ln -s /home/yubs/cloudcli-plugin-agy ~/.claude-code-ui/plugins/cloudcli-plugin-a
 
 ---
 
-## 📡 Usage with External Clients
+## 💡 Client Usage via Cloud-Agent API Gateway
 
-Because of the **Zero-Port Gateway Architecture**, you do not need to configure custom ports. Use Cloud-Agent's primary gateway port (`3001`):
+> [!NOTE]
+> **Architectural Boundary Clarification:**  
+> This plugin is strictly a **local execution driver (Backend Driver)** and **does NOT** expose an external API Gateway. All external API requests (`/v1/chat/completions`, `/v1/messages`, authentication) are handled exclusively by **Cloud-Agent's host gateway** (`http://127.0.0.1:3001`). The host gateway automatically delegates requests with model prefix `agy/*` to this driver internally.
 
-### 1. Claude Code CLI
+### 1. Claude Code CLI (via Cloud-Agent Gateway)
+Configure Claude Code to route through Cloud-Agent's unified gateway:
 ```bash
 export ANTHROPIC_BASE_URL="http://127.0.0.1:3001"
 export ANTHROPIC_API_KEY="sk-any-token"
 
-# Start Claude Code
+# Launch Claude Code — routed through Cloud-Agent to this agy driver
 claude
 ```
 
-### 2. cURL / OpenAI Compatible Clients
+### 2. cURL / OpenAI Compatible Clients (via Cloud-Agent Gateway)
 ```bash
 curl -N http://127.0.0.1:3001/v1/chat/completions \
   -H "Content-Type: application/json" \
