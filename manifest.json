@@ -1,0 +1,13 @@
+{
+  "name": "cloudcli-plugin-agy",
+  "displayName": "Google Antigravity (agy)",
+  "version": "1.0.0",
+  "description": "Local Google Antigravity (agy) execution driver and control dashboard for Cloud-Agent / CloudCLI",
+  "icon": "icon.svg",
+  "type": "module",
+  "slot": "tab",
+  "entry": "dist/index.js",
+  "server": "dist/server.js",
+  "permissions": ["network", "storage"],
+  "repository": "https://github.com/solshevik/cloudcli-plugin-agy"
+}

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="agy-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4285F4"/>
+      <stop offset="50%" stop-color="#9B72CF"/>
+      <stop offset="100%" stop-color="#FF5722"/>
+    </linearGradient>
+    <linearGradient id="orbit-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4285F4" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#34A853" stop-opacity="0.8"/>
+    </linearGradient>
+  </defs>
+  <!-- Background rounded hexagon / shield -->
+  <rect x="6" y="6" width="88" height="88" rx="22" fill="#0F1117" stroke="#252A36" stroke-width="2"/>
+  
+  <!-- Anti-Gravity floating core -->
+  <circle cx="50" cy="50" r="14" fill="url(#agy-grad)"/>
+  
+  <!-- Orbiting gravity rings -->
+  <ellipse cx="50" cy="50" rx="34" ry="12" fill="none" stroke="url(#orbit-grad)" stroke-width="3" transform="rotate(-30 50 50)"/>
+  <ellipse cx="50" cy="50" rx="34" ry="12" fill="none" stroke="url(#agy-grad)" stroke-width="2.5" stroke-dasharray="6 4" transform="rotate(45 50 50)"/>
+  
+  <!-- Quantum pulse dots -->
+  <circle cx="26" cy="36" r="3" fill="#4285F4"/>
+  <circle cx="74" cy="64" r="3" fill="#FF5722"/>
+  <circle cx="68" cy="32" r="2.5" fill="#34A853"/>
+</svg>
