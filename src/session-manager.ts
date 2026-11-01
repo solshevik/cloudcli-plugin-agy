@@ -10,8 +10,8 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import type { AgySessionRecord } from './types.js';
 
-const SESSION_STORE_DIR = path.join(os.homedir(), '.claude-code-ui', 'plugins', 'cloudcli-plugin-agy');
-const SESSION_STORE_FILE = path.join(SESSION_STORE_DIR, 'sessions.json');
+const SESSION_STORE_DIR = path.join(os.homedir(), '.claude-code-ui');
+const SESSION_STORE_FILE = path.join(SESSION_STORE_DIR, 'agy-sessions.json');
 
 export class SessionContinuityManager {
   private sessions: Map<string, AgySessionRecord> = new Map();

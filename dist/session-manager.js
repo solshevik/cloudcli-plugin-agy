@@ -7,8 +7,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import crypto from 'node:crypto';
-const SESSION_STORE_DIR = path.join(os.homedir(), '.claude-code-ui', 'plugins', 'cloudcli-plugin-agy');
-const SESSION_STORE_FILE = path.join(SESSION_STORE_DIR, 'sessions.json');
+const SESSION_STORE_DIR = path.join(os.homedir(), '.claude-code-ui');
+const SESSION_STORE_FILE = path.join(SESSION_STORE_DIR, 'agy-sessions.json');
 export class SessionContinuityManager {
     sessions = new Map();
     constructor() {
