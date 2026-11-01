@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "build": "tsc",
+    "build": "node scripts/build.js",
     "watch": "tsc --watch",
     "prepublishOnly": "npm run build",
     "test": "node --test dist/test/*.test.js"
@@ -30,8 +30,8 @@
     "url": "https://github.com/solshevik/cloudcli-plugin-agy/issues"
   },
   "homepage": "https://github.com/solshevik/cloudcli-plugin-agy#readme",
-  "devDependencies": {
-    "@types/node": "^22.20.5",
-    "typescript": "^5.9.3"
+  "dependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0"
   }
 }

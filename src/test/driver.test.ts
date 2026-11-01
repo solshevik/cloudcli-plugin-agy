@@ -36,6 +36,7 @@ What is the speed of light?
 
 test('SessionContinuityManager: tracks and reuses conversationId', () => {
   const mgr = new SessionContinuityManager();
+  mgr.clearSessions();
   const res1 = mgr.getOrCreateConversationId('test-sess-1');
   const res2 = mgr.getOrCreateConversationId('test-sess-1');
 
