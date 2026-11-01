@@ -44,17 +44,40 @@ export interface UnifiedChunk {
     content: string;
     isFinished?: boolean;
 }
+export interface DiagnosticInfo {
+    code: 'CLI_NOT_FOUND' | 'AUTH_REQUIRED' | 'PROCESS_ERROR' | 'HEALTHY';
+    message: string;
+    details?: string;
+    fixCommand?: string;
+}
 export interface AgyStatus {
     installed: boolean;
     version: string;
     path: string;
     supportedModels: string[];
     activeSessions: number;
+    diagnostics?: DiagnosticInfo;
+}
+export interface ChatMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: number;
+    model?: string;
 }
 export interface AgySessionRecord {
     sessionId: string;
     conversationId: string;
+    title: string;
     lastActive: number;
     turnCount: number;
+    messages: ChatMessage[];
+}
+export interface TestBenchmarkResult {
+    success: boolean;
+    latencyMs?: number;
+    output?: string;
+    error?: string;
+    diagnostics?: DiagnosticInfo;
 }
 //# sourceMappingURL=types.d.ts.map

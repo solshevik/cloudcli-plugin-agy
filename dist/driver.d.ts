@@ -1,5 +1,8 @@
 /**
  * Core Google Antigravity (agy) Local Process Driver
+ *
+ * Handles CLI binary detection, version probing, prompt cleaning,
+ * session continuity parameter mapping, and stream-json event parsing.
  */
 import type { AgyStatus, UnifiedChatRequest, UnifiedChunk } from './types.js';
 export declare class AgyDriver {
@@ -9,7 +12,7 @@ export declare class AgyDriver {
      */
     resolveAgyPath(): string;
     /**
-     * Probes system for agy CLI status and version.
+     * Probes system for agy CLI status, version, and diagnostic health.
      */
     getStatus(): Promise<AgyStatus>;
     /**

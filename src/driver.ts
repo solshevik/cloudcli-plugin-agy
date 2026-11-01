@@ -1,5 +1,8 @@
 /**
  * Core Google Antigravity (agy) Local Process Driver
+ *
+ * Handles CLI binary detection, version probing, prompt cleaning,
+ * session continuity parameter mapping, and stream-json event parsing.
  */
 
 import { spawn } from 'node:child_process';
@@ -8,7 +11,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { cleanPrompt } from './prompt-scrubber.js';
 import { sessionManager } from './session-manager.js';
-import type { AgyStatus, UnifiedChatRequest, UnifiedChunk } from './types.js';
+import type { AgyStatus, DiagnosticInfo, UnifiedChatRequest, UnifiedChunk } from './types.js';
 
 const SUPPORTED_MODELS = [
   'gemini-3.8-flash-low',
@@ -56,7 +59,7 @@ export class AgyDriver {
   }
 
   /**
-   * Probes system for agy CLI status and version.
+   * Probes system for agy CLI status, version, and diagnostic health.
    */
   public async getStatus(): Promise<AgyStatus> {
     const agyPath = this.resolveAgyPath();
@@ -76,22 +79,52 @@ export class AgyDriver {
       proc.on('close', (code) => {
         const isInstalled = code === 0 || stdout.length > 0;
         const version = (stdout || stderr || 'unknown').trim().split('\n')[0];
+
+        let diagnostics: DiagnosticInfo | undefined;
+        if (!isInstalled) {
+          diagnostics = {
+            code: 'CLI_NOT_FOUND',
+            message: `未在服务器环境中找到可用的 agy 命令行程序。`,
+            details: stderr || '执行 agy --version 退出码非 0',
+            fixCommand: 'which agy || export PATH="$HOME/.local/bin:$PATH"',
+          };
+        } else if (stderr.toLowerCase().includes('auth') || stderr.toLowerCase().includes('login')) {
+          diagnostics = {
+            code: 'AUTH_REQUIRED',
+            message: 'agy CLI 尚未登录认证。',
+            details: stderr,
+            fixCommand: 'agy auth',
+          };
+        } else {
+          diagnostics = {
+            code: 'HEALTHY',
+            message: '引擎已就绪，状态正常。',
+          };
+        }
+
         resolve({
           installed: isInstalled,
           version: isInstalled ? version : 'Not Found',
           path: agyPath,
           supportedModels: SUPPORTED_MODELS,
           activeSessions,
+          diagnostics,
         });
       });
 
-      proc.on('error', () => {
+      proc.on('error', (err) => {
         resolve({
           installed: false,
           version: 'Not Found',
           path: agyPath,
           supportedModels: SUPPORTED_MODELS,
           activeSessions: 0,
+          diagnostics: {
+            code: 'CLI_NOT_FOUND',
+            message: `无法启动 agy 进程: ${err.message}`,
+            details: `系统找不到指定路径: ${agyPath}。请确认本地是否已安装 agy。`,
+            fixCommand: 'export PATH="$HOME/.local/bin:$PATH"',
+          },
         });
       });
     });
@@ -147,25 +180,33 @@ export class AgyDriver {
     const model = this.resolveModelName(request.model, request.thinkingBudget);
     const prompt = this.extractPrompt(request.messages);
 
-    const { conversationId } = sessionManager.getOrCreateConversationId(request.sessionId);
+    const { conversationId } = sessionManager.getOrCreateConversationId(request.sessionId, prompt);
 
     const args = [
-      '--conversation', conversationId,
+      '-p', prompt,
       '--model', model,
-      prompt,
+      '--output-format', 'stream-json',
+      '--dangerously-skip-permissions',
+      '--disable-slash-commands',
     ];
+
+    if (conversationId) {
+      args.unshift('--conversation', conversationId);
+    }
 
     const child = spawn(agyPath, args, {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: {
         ...process.env,
-        PYTHONUNBUFFERED: '1',
+        NO_COLOR: '1',
+        FORCE_COLOR: '0',
       },
     });
 
     let buffer = '';
     let hasEmittedChunk = false;
     let accumulatedText = '';
+    let accumulatedStderr = '';
 
     // Async queue pattern for yielding chunks
     type QueueItem = { chunk?: UnifiedChunk; done?: boolean; error?: Error };
@@ -181,59 +222,61 @@ export class AgyDriver {
     };
 
     child.stdout.on('data', (data) => {
-      buffer += data.toString();
+      buffer += data.toString('utf8');
       const lines = buffer.split('\n');
       buffer = lines.pop() || '';
 
       for (const line of lines) {
         const trimmed = line.trim();
-        if (!trimmed) continue;
+        if (!trimmed || !trimmed.startsWith('{')) continue;
 
-        // Process SSE formatted line
-        if (trimmed.startsWith('data:')) {
-          const payload = trimmed.slice(5).trim();
-          try {
-            const parsed = JSON.parse(payload);
-            const text = parsed.text || parsed.delta?.text || parsed.content || '';
-            if (text) {
+        try {
+          const event = JSON.parse(trimmed);
+
+          // Handle step update text delta
+          if (event.event === 'step_update' && event.step_update) {
+            const su = event.step_update;
+            if (su.step_type === 'agent_response' && su.text_delta) {
               hasEmittedChunk = true;
-              accumulatedText += text;
-              push({ chunk: { type: 'text', content: text } });
+              accumulatedText += su.text_delta;
+              push({ chunk: { type: 'text', content: su.text_delta } });
             }
-          } catch {
-            if (payload && payload !== '[DONE]') {
-              hasEmittedChunk = true;
-              accumulatedText += payload;
-              push({ chunk: { type: 'text', content: payload } });
+          } else if (event.event === 'result' && event.result) {
+            if (event.result.status === 'ERROR') {
+              push({ error: new Error(event.result.error || 'agy execution error') });
+              return;
+            } else {
+              if (!hasEmittedChunk && event.result.response) {
+                hasEmittedChunk = true;
+                accumulatedText += event.result.response;
+                push({ chunk: { type: 'text', content: event.result.response } });
+              }
+              push({ chunk: { type: 'done', content: '', isFinished: true } });
             }
           }
-        } else if (trimmed.startsWith('event: result')) {
-          // Immediately close upon result event to prevent stream hanging
-          push({ chunk: { type: 'done', content: '', isFinished: true } });
+        } catch {
+          // ignore non-json line
         }
       }
     });
 
     child.stderr.on('data', (d) => {
-      const errText = d.toString();
-      // Only log genuine errors, not progress logs
-      if (errText.includes('ERROR') || errText.includes('Exception')) {
-        console.error('[AgyPlugin:CLI stderr]:', errText);
-      }
+      accumulatedStderr += d.toString();
     });
 
     child.on('close', (code) => {
       if (code !== 0 && !hasEmittedChunk) {
-        push({ error: new Error(`agy CLI exited with code ${code}`) });
-        return;
-      }
+        const errDetail = accumulatedStderr.trim() || `exit code ${code}`;
+        let humanMessage = `agy 执行失败: ${errDetail}`;
 
-      // If buffer still has remaining text
-      if (buffer.trim()) {
-        const remaining = buffer.replace(/^data:\s*/, '').trim();
-        if (remaining && remaining !== '[DONE]') {
-          push({ chunk: { type: 'text', content: remaining } });
+        if (errDetail.toLowerCase().includes('auth') || errDetail.toLowerCase().includes('login')) {
+          humanMessage = `agy CLI 尚未登录认证。请登录服务器终端执行 "agy auth" 完成认证后再试。`;
+        } else if (errDetail.toLowerCase().includes('invalid model')) {
+          humanMessage = `模型选择冲突: ${errDetail}。请切换为 gemini-3.8-flash-low 或 claude-sonnet-4-6 重试。`;
         }
+
+        push({ error: new Error(humanMessage) });
+        return;
       }
 
       // If 0 chunks were emitted (fallback mechanism)
@@ -244,8 +287,16 @@ export class AgyDriver {
       push({ done: true });
     });
 
-    child.on('error', (err) => {
-      push({ error: err });
+    child.on('error', (err: any) => {
+      if (err.code === 'ENOENT') {
+        push({
+          error: new Error(
+            `未找到 agy 命令: 系统找不到路径 "${agyPath}"。请确认该服务器已安装 Google Antigravity 并将其加入 PATH。`
+          ),
+        });
+      } else {
+        push({ error: new Error(`启动 agy 失败: ${err.message}`) });
+      }
     });
 
     while (true) {

@@ -1,8 +1,9 @@
 /**
- * Google Antigravity (agy) Frontend Plugin Dashboard
+ * Google Antigravity (agy) Frontend Plugin Dashboard & Interactive Chat Console
  *
  * Implements mount(container, api) and unmount(container) lifecycle hooks.
- * Dynamically adapts to host dark/light themes and project/session context.
+ * Features an integrated interactive chat interface, multi-session management,
+ * and precise environmental diagnostics.
  */
 import type { PluginAPI } from './types.js';
 export declare function mount(container: HTMLElement, api: PluginAPI): void;

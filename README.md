@@ -26,7 +26,8 @@
 - **🛡️ Client Harness & XML Sanitizer**: Automatically detects and purges 500+ lines of client-internal XML wrapper blocks (`<guidelines>`, `<memory_management>`, `<commit_attribution>`, `<tools>`) and timezone metadata, preventing prompt-injection false positives in underlying Gemini and Sonnet models.
 - **🔄 Session Continuity Tracking**: Maps client session keys to persistent `agy --conversation <convId>` states in `~/.claude-code-ui/agy-sessions.json`. Supports 10+ turns of continuous context memory (algebra, reasoning, and context recall) with zero drift.
 - **⏱️ Instant SSE Stream Termination**: Actively intercepts `agy` CLI's `event: result` and immediately emits `[DONE]`, eliminating terminal hanging and timeouts after output completes.
-- **📊 Real-time Dashboard Tab**: Integrates cleanly into Cloud-Agent workspace tabs, providing instant CLI path probing, interactive round-trip latency benchmarking, active session inspection, and cache reset controls.
+- **🖥️ Two-Pane Interactive Chat Workspace**: Built-in native session drawer and interactive chat room. Supports 1-click new/switch/delete session, Markdown/code block bubble rendering, quick starter prompts, and collapsible environment health diagnostics.
+- **📊 Real-time Dashboard & Diagnostics**: Seamlessly integrated into Cloud-Agent workspace tabs, providing instant CLI path probing, latency benchmarking, actionable troubleshooting tips, and active session inspection.
 - **💬 Native Slash Command (`/agy`)**: Automatically exposes the `/agy` command and tool usage guides to the chat composer upon installation.
 
 ---
