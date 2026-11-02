@@ -4,10 +4,21 @@
   "version": "1.0.0",
   "description": "Local Google Antigravity (agy) execution driver and control dashboard for Cloud-Agent / CloudCLI",
   "icon": "icon.svg",
-  "type": "module",
+  "type": "agent",
   "slot": "tab",
   "entry": "dist/index.js",
   "server": "dist/server.js",
   "permissions": ["network", "storage"],
+  "agent": {
+    "providerId": "agy",
+    "cliName": "agy",
+    "defaultModel": "gemini-2.5-pro",
+    "watchPaths": ["~/.gemini/antigravity-cli/brain"],
+    "models": [
+      { "value": "gemini-2.5-pro", "label": "Gemini 2.5 Pro" },
+      { "value": "gemini-2.5-flash", "label": "Gemini 2.5 Flash" },
+      { "value": "gemini-3.8-flash-low", "label": "Gemini 3.8 Flash" }
+    ]
+  },
   "repository": "https://github.com/solshevik/cloudcli-plugin-agy"
 }
